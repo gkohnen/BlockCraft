@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>BlockCraft</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #87ceeb;
-    font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Helvetica Neue", sans-serif; user-select: none; }
-  canvas { display: block; }
+    font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Helvetica Neue", sans-serif; user-select: none;
+    -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  canvas { display: block; touch-action: none; }
   #crosshair { position: fixed; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; }
   #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 2px #000; }
   #crosshair::before { left: 10px; top: 0; width: 2px; height: 22px; }
@@ -21,11 +25,11 @@
   .slot span { position: absolute; top: 1px; left: 4px; color: #fff; font-size: 11px; text-shadow: 1px 1px 0 #000; }
   #blockname { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 22px;
     text-shadow: 2px 2px 0 #000; transition: opacity .4s; opacity: 0; pointer-events: none; }
-  #status { position: fixed; top: 12px; left: 12px; color: #fff; font-size: 16px; text-shadow: 2px 2px 0 #000; pointer-events: none; }
+  #status { position: fixed; top: 12px; left: calc(12px + env(safe-area-inset-left)); color: #fff; font-size: 16px; text-shadow: 2px 2px 0 #000; pointer-events: none; }
   #hint { position: fixed; bottom: 18px; left: 14px; color: #fff; font-size: 13px; text-shadow: 1px 1px 0 #000; opacity: .85; pointer-events: none; line-height: 1.5; }
   #underwater { position: fixed; inset: 0; background: rgba(30,80,200,.35); pointer-events: none; display: none; }
-  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column;
-    background: radial-gradient(ellipse at center, rgba(20,30,60,.55), rgba(10,15,35,.85)); color: #fff; }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: safe center; flex-direction: column;
+    overflow-y: auto; padding: 12px; box-sizing: border-box; touch-action: pan-y; background: radial-gradient(ellipse at center, rgba(20,30,60,.55), rgba(10,15,35,.85)); color: #fff; }
   h1 { font-size: 72px; margin: 0 0 4px; letter-spacing: 2px; text-shadow: 4px 4px 0 #2b2b2b; }
   h1 b:nth-child(6n+1){color:#ff5a5a} h1 b:nth-child(6n+2){color:#ffa53b} h1 b:nth-child(6n+3){color:#ffe14d}
   h1 b:nth-child(6n+4){color:#6fdc5b} h1 b:nth-child(6n+5){color:#4fb3ff} h1 b:nth-child(6n){color:#c27bff}
@@ -47,6 +51,56 @@
   .inv img { width: 52px; height: 52px; image-rendering: pixelated; display: block; margin: 0 auto 4px; }
   #invslots { display: flex; gap: 6px; }
   #invslots .slot { cursor: pointer; }
+  .buttons { display: flex; flex-direction: column; align-items: center; }
+  /* touch controls: only shown on phones and tablets (body.touch) */
+  body:not(.touch) .mob, body.touch .desk { display: none !important; }
+  body.touch #crosshair, body.touch #hint { display: none; }
+  #touchui, #rotate { display: none; }
+  body.touch.playing #touchui { display: block; }
+  #touchui { position: fixed; inset: 0; pointer-events: none; }
+  #joy { position: absolute; left: calc(28px + env(safe-area-inset-left)); bottom: 28px; width: 120px; height: 120px;
+    box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,.15); border: 3px solid rgba(255,255,255,.4); }
+  #knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+    background: rgba(255,255,255,.6); }
+  .tbtn { position: absolute; width: 72px; height: 72px; box-sizing: border-box; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; color: #fff; font-size: 30px; background: rgba(0,0,0,.35);
+    border: 3px solid rgba(255,255,255,.45); pointer-events: auto; touch-action: none; }
+  .tbtn.down { background: rgba(255,225,77,.5); }
+  #tjump { right: calc(24px + env(safe-area-inset-right)); bottom: 24px; width: 84px; height: 84px; font-size: 36px; }
+  #tdown { right: calc(30px + env(safe-area-inset-right)); bottom: 120px; display: none; }
+  #tfly { right: calc(36px + env(safe-area-inset-right)); bottom: 120px; width: 60px; height: 60px; font-size: 26px; }
+  body.flying #tdown { display: flex; }
+  body.flying #tfly { bottom: 204px; }
+  #ttop { position: absolute; top: 10px; right: calc(12px + env(safe-area-inset-right)); display: flex; gap: 8px; }
+  #ttop .tbtn { position: static; width: 48px; height: 48px; font-size: 22px; }
+  body.touch { --slot: clamp(30px, calc((100vw - 360px) / 9 - 10px), 54px); }
+  body.touch .slot { width: var(--slot); height: var(--slot); }
+  body.touch .slot img { width: calc(var(--slot) * .78); height: calc(var(--slot) * .78); }
+  body.touch #hotbar { bottom: calc(8px + env(safe-area-inset-bottom)); }
+  body.touch:not(.playing) #hotbar { display: none; }
+  #rotate { position: fixed; inset: 0; z-index: 10; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 20px; color: #fff; font-size: 24px; background: rgba(10,15,35,.94); }
+  #rotate b { font-size: 80px; }
+  @media (orientation: portrait) { body.touch.playing #rotate { display: flex; } }
+  /* small screens, e.g. a phone held sideways */
+  @media (max-height: 500px) {
+    h1 { font-size: 42px; }
+    .sub { font-size: 15px; margin-bottom: 10px; }
+    .buttons { flex-direction: row; }
+    .btn { font-size: 20px; padding: 8px 28px; border-bottom-width: 4px; }
+    .btn.small { font-size: 15px; padding: 7px 18px; }
+    .controls { margin-top: 10px; padding: 10px 16px; font-size: 13px; gap: 3px 14px; }
+    #inventory h2 { font-size: 22px; }
+    #inventory > div:first-of-type { font-size: 14px; margin-top: 2px !important; }
+    #invgrid { grid-template-columns: repeat(8, 72px); gap: 5px; margin: 6px 0; }
+    .inv { font-size: 10px; padding: 3px 2px; border-width: 2px; }
+    .inv img { width: 28px; height: 28px; margin-bottom: 2px; }
+    #invdone { margin-top: 8px !important; }
+  }
+  @media (max-width: 620px) {
+    h1 { font-size: 44px; }
+    #invgrid { grid-template-columns: repeat(4, 76px); }
+  }
 </style>
 </head>
 <body>
@@ -56,13 +110,28 @@
 <div id="hint"><kbd>E</kbd> all blocks · <kbd>F</kbd> fly · <kbd>T</kbd> day/night</div>
 <div id="blockname"></div>
 <div id="hotbar"></div>
+<div id="touchui">
+  <div id="joy"><div id="knob"></div></div>
+  <div class="tbtn" id="tjump" data-key="Space">⬆</div>
+  <div class="tbtn" id="tdown" data-key="ShiftLeft">⬇</div>
+  <div class="tbtn" id="tfly" data-act="fly">✈️</div>
+  <div id="ttop">
+    <div class="tbtn" data-act="blocks">🎒</div>
+    <div class="tbtn" data-act="day">🌓</div>
+    <div class="tbtn" data-act="sound">🔊</div>
+    <div class="tbtn" data-act="pause">⏸</div>
+  </div>
+</div>
+<div id="rotate"><b>🔄</b>Turn your phone sideways to play!</div>
 
 <div id="menu" class="overlay">
   <h1 id="title"></h1>
   <div class="sub">Build anything you can imagine! 🏰🐷💥</div>
-  <button class="btn" id="play">▶ Play</button>
-  <button class="btn small" id="newworld">🌍 New World</button>
-  <div class="controls">
+  <div class="buttons">
+    <button class="btn" id="play">▶ Play</button>
+    <button class="btn small" id="newworld">🌍 New World</button>
+  </div>
+  <div class="controls desk">
     <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</div><div>Walk around</div>
     <div>🖱️ Move mouse</div><div>Look around</div>
     <div><kbd>Space</kbd></div><div>Jump (or swim up)</div>
@@ -75,15 +144,23 @@
     <div><kbd>T</kbd> / <kbd>M</kbd></div><div>Day ↔ night / Sound on-off</div>
     <div><kbd>Esc</kbd></div><div>Pause</div>
   </div>
-  <div class="sub" style="margin-top:16px;font-size:15px">Tip: place TNT, then click it… and run! 🏃 Click a pig to make it jump.</div>
+  <div class="controls mob">
+    <div>🕹️ Left thumb</div><div>Walk (push to the edge to run)</div>
+    <div>👆 Drag on the right</div><div>Look around</div>
+    <div>👆 Tap a block</div><div>Place a block</div>
+    <div>✋ Hold on a block</div><div>Break it (keep holding to dig!)</div>
+    <div>⬆ ✈️</div><div>Jump / Fly (⬆ ⬇ to go up and down)</div>
+    <div>🎒 🌓 🔊 ⏸</div><div>All blocks · Day/night · Sound · Pause</div>
+  </div>
+  <div class="sub" style="margin-top:16px;font-size:15px">Tip: place TNT, then <span class="desk">click</span><span class="mob">tap</span> it… and run! 🏃 <span class="desk">Click</span><span class="mob">Tap</span> a pig to make it jump.</div>
 </div>
 
 <div id="inventory" class="overlay">
   <h2 style="margin:0">Pick a block! 🧱</h2>
-  <div style="opacity:.85;margin-top:6px">Click a slot below, then click a block to put it there.</div>
+  <div style="opacity:.85;margin-top:6px"><span class="desk">Click</span><span class="mob">Tap</span> a slot below, then <span class="desk">click</span><span class="mob">tap</span> a block to put it there.</div>
   <div id="invgrid"></div>
   <div id="invslots"></div>
-  <button class="btn" id="invdone" style="margin-top:16px">✔ Done (E)</button>
+  <button class="btn" id="invdone" style="margin-top:16px">✔ Done<span class="desk"> (E)</span></button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -95,6 +172,9 @@ const SAVE_KEY = 'blockcraft_save_v1';
 const world = new Uint8Array(WX * WZ * H);
 const idx = (x, y, z) => (y * WZ + z) * WX + x;
 const $ = id => document.getElementById(id);
+// Phones and tablets get on-screen touch controls instead of mouse + keyboard.
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+if (TOUCH) document.body.classList.add('touch');
 
 // ---------------------------------------------------------------- texture atlas (procedural pixel art)
 const TILE_NAMES = ['grass_top','grass_side','dirt','stone','log_side','log_top','leaves','sand','water','planks','glass',
@@ -278,7 +358,7 @@ function findLand(cx, cz) {
 
 // ---------------------------------------------------------------- three.js setup
 const renderer = new THREE.WebGLRenderer({ antialias: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, TOUCH ? 1 : 1.5)); // phones: fewer pixels, smoother + cooler
 renderer.setSize(innerWidth, innerHeight);
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
@@ -707,11 +787,15 @@ function raycast(o, d, maxD) {
 const rayDir = new THREE.Vector3(), rayOrigin = new THREE.Vector3();
 const pigRay = new THREE.Raycaster(); pigRay.far = 6;
 let target = null;
+let touchAim = null; // on touch screens we aim where the finger is ({x, y} in -1..1), not at the screen centre
 function updateTarget() {
-  camera.getWorldDirection(rayDir);
   rayOrigin.set(player.pos.x, player.pos.y + 1.62, player.pos.z);
+  if (touchAim) {
+    camera.updateMatrixWorld();
+    rayDir.set(touchAim.x, touchAim.y, 0.5).unproject(camera).sub(camera.position).normalize();
+  } else camera.getWorldDirection(rayDir);
   target = raycast(rayOrigin, rayDir, 6);
-  highlight.visible = !!target && state === 'playing';
+  highlight.visible = !!target && state === 'playing' && (!TOUCH || !!touchAim);
   if (target) highlight.position.set(target.x + 0.5, target.y + 0.5, target.z + 0.5);
 }
 function pigUnderCrosshair() {
@@ -768,10 +852,15 @@ $('invgrid').addEventListener('click', e => {
   hotbar[selected] = +el.dataset.id; sfx.click(); select(selected);
 });
 $('invslots').addEventListener('click', e => { const el = e.target.closest('.slot'); if (el) { sfx.click(); select(+el.dataset.i); } });
+hotbarEl.addEventListener('touchstart', e => {
+  const el = e.target.closest('.slot'); if (!el) return;
+  e.preventDefault(); sfx.click(); select(+el.dataset.i);
+}, { passive: false });
 
 let state = 'menu';
 const keys = {};
 function lock() {
+  if (TOUCH) { startTouchPlay(); return; }
   try {
     const p = renderer.domElement.requestPointerLock();
     if (p && p.catch) p.catch(() => { if (state !== 'playing') showMenu(); });
@@ -779,10 +868,13 @@ function lock() {
 }
 function showMenu() {
   state = 'menu'; $('menu').style.display = 'flex'; $('inventory').style.display = 'none';
-  mouseHeld = null; for (const k in keys) delete keys[k];
+  mouseHeld = null; for (const k in keys) delete keys[k]; resetTouch();
   saveGame();
 }
-function openInventory() { state = 'inventory'; $('inventory').style.display = 'flex'; mouseHeld = null; for (const k in keys) delete keys[k]; document.exitPointerLock(); }
+function openInventory() {
+  state = 'inventory'; $('inventory').style.display = 'flex'; mouseHeld = null; for (const k in keys) delete keys[k]; resetTouch();
+  if (document.exitPointerLock) document.exitPointerLock();
+}
 function closeInventory() { $('inventory').style.display = 'none'; lock(); }
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === renderer.domElement) {
@@ -796,14 +888,15 @@ $('newworld').onclick = () => {
   newWorld(); saveGame();
 };
 
+// on touch screens the browser also fakes mouse events after a tap; touch controls handle everything there
 document.addEventListener('mousemove', e => {
-  if (state !== 'playing') return;
+  if (state !== 'playing' || TOUCH) return;
   player.yaw -= e.movementX * 0.0025;
   player.pitch = Math.max(-1.55, Math.min(1.55, player.pitch - e.movementY * 0.0025));
 });
 let mouseHeld = null;
 document.addEventListener('mousedown', e => {
-  if (state !== 'playing') return;
+  if (state !== 'playing' || TOUCH) return;
   const place = e.button === 2 || (e.button === 0 && e.ctrlKey);
   if (place) placeBlock(); else if (e.button === 0) breakBlock(); else return;
   mouseHeld = { place, t: 0.3 };
@@ -828,16 +921,115 @@ document.addEventListener('keydown', e => {
   keys[e.code] = true;
   if (e.repeat) return;
   if (/^Digit[1-9]$/.test(e.code)) select(+e.code[5] - 1);
-  else if (e.code === 'KeyE') openInventory();
-  else if (e.code === 'KeyF') { player.flying = !player.flying; player.vel.y = 0; sfx.click(); }
-  else if (e.code === 'KeyT') { dayTime = (dayTime + 0.5) % 1; sfx.click(); }
-  else if (e.code === 'KeyM') { muted = !muted; }
+  else if (e.code === 'KeyE') ACTIONS.blocks();
+  else if (e.code === 'KeyF') ACTIONS.fly();
+  else if (e.code === 'KeyT') ACTIONS.day();
+  else if (e.code === 'KeyM') ACTIONS.sound();
 });
+const ACTIONS = {
+  blocks: openInventory,
+  fly() { player.flying = !player.flying; player.vel.y = 0; sfx.click(); },
+  day() { dayTime = (dayTime + 0.5) % 1; sfx.click(); },
+  sound() { muted = !muted; document.querySelector('[data-act=sound]').textContent = muted ? '🔇' : '🔊'; },
+  pause: showMenu,
+};
 document.addEventListener('keyup', e => { delete keys[e.code]; });
 window.addEventListener('blur', () => { for (const k in keys) delete keys[k]; mouseHeld = null; });
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
 });
+
+// ---------------------------------------------------------------- touch controls (phones & tablets)
+// Left thumb: joystick. Right side: drag to look, tap a block to place, hold on a block to break.
+const JOY_R = 55, HOLD_MS = 350, MOVE_PX = 12, LOOK_SPEED = 0.006;
+const joy = { id: null, cx: 0, cy: 0, x: 0, y: 0, run: false };
+let look = null; // the finger on the right side: { id, x, y, sx, sy, t0, moved, digging }
+const joyEl = $('joy'), knobEl = $('knob');
+const buzz = ms => { if (navigator.vibrate) navigator.vibrate(ms); };
+const toAim = (x, y) => ({ x: x / innerWidth * 2 - 1, y: 1 - y / innerHeight * 2 });
+function startTouchPlay() {
+  state = 'playing'; $('menu').style.display = 'none'; $('inventory').style.display = 'none'; resetTouch();
+  const el = document.documentElement; // full screen + landscape where the phone allows it (Android; not iPhone)
+  if (el.requestFullscreen && !document.fullscreenElement) {
+    el.requestFullscreen({ navigationUI: 'hide' }).then(() => screen.orientation.lock('landscape')).catch(() => {});
+  }
+}
+function releaseJoy() {
+  joy.id = null; joy.x = joy.y = 0; joy.run = false;
+  joyEl.style.cssText = ''; knobEl.style.transform = '';
+}
+function resetTouch() {
+  releaseJoy(); look = null; touchAim = null;
+  document.querySelectorAll('.tbtn.down').forEach(b => b.classList.remove('down'));
+}
+const cv = renderer.domElement;
+cv.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (state !== 'playing') return;
+  for (const t of e.changedTouches) {
+    if (joy.id === null && t.clientX < innerWidth * 0.4 && t.clientY > innerHeight * 0.4) {
+      joy.id = t.identifier; joy.cx = t.clientX; joy.cy = t.clientY; // the joystick jumps to where the thumb lands
+      joyEl.style.left = (t.clientX - 60) + 'px'; joyEl.style.top = (t.clientY - 60) + 'px'; joyEl.style.bottom = 'auto';
+    } else if (!look) {
+      look = { id: t.identifier, x: t.clientX, y: t.clientY, sx: t.clientX, sy: t.clientY, t0: performance.now(), moved: false, digging: false };
+      touchAim = toAim(t.clientX, t.clientY);
+    }
+  }
+}, { passive: false });
+cv.addEventListener('touchmove', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    if (t.identifier === joy.id) {
+      let dx = (t.clientX - joy.cx) / JOY_R, dy = (t.clientY - joy.cy) / JOY_R;
+      const len = Math.hypot(dx, dy); if (len > 1) { dx /= len; dy /= len; }
+      joy.x = dx; joy.y = dy; joy.run = len > 0.95;
+      knobEl.style.transform = `translate(${dx * JOY_R}px, ${dy * JOY_R}px)`;
+    } else if (look && t.identifier === look.id) {
+      if (look.digging) { touchAim = toAim(t.clientX, t.clientY); continue; } // slide to dig more blocks
+      if (!look.moved) {
+        if (Math.hypot(t.clientX - look.sx, t.clientY - look.sy) < MOVE_PX) continue;
+        look.moved = true; touchAim = null; look.x = t.clientX; look.y = t.clientY;
+      }
+      player.yaw -= (t.clientX - look.x) * LOOK_SPEED;
+      player.pitch = Math.max(-1.55, Math.min(1.55, player.pitch - (t.clientY - look.y) * LOOK_SPEED));
+      look.x = t.clientX; look.y = t.clientY;
+    }
+  }
+}, { passive: false });
+function touchEnd(e) {
+  for (const t of e.changedTouches) {
+    if (t.identifier === joy.id) releaseJoy();
+    else if (look && t.identifier === look.id) {
+      if (look.digging) mouseHeld = null;
+      else if (!look.moved && e.type === 'touchend' && state === 'playing') {
+        // a quick tap: poke a pig or light TNT, otherwise place a block
+        touchAim = toAim(look.sx, look.sy); updateTarget();
+        if (pigUnderCrosshair() || (target && target.id === B.TNT)) breakBlock(); else placeBlock();
+        buzz(10);
+      }
+      look = null; touchAim = null;
+    }
+  }
+}
+cv.addEventListener('touchend', touchEnd);
+cv.addEventListener('touchcancel', touchEnd);
+function checkTouchHold() {
+  if (!look || look.moved || look.digging || performance.now() - look.t0 < HOLD_MS) return;
+  look.digging = true; updateTarget(); breakBlock(); buzz(15);
+  mouseHeld = { place: false, t: 0.3 }; // keeps digging, like holding the mouse button
+}
+document.querySelectorAll('.tbtn').forEach(b => {
+  b.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (state !== 'playing') return;
+    b.classList.add('down');
+    if (b.dataset.key) keys[b.dataset.key] = true; else ACTIONS[b.dataset.act]();
+  }, { passive: false });
+  const up = e => { e.preventDefault(); b.classList.remove('down'); if (b.dataset.key) delete keys[b.dataset.key]; };
+  b.addEventListener('touchend', up); b.addEventListener('touchcancel', up);
+});
+if (TOUCH) document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'playing') showMenu(); });
+document.addEventListener('gesturestart', e => e.preventDefault()); // stop pinch-zoom on iPhone/iPad
 
 // ---------------------------------------------------------------- save / load (localStorage, run-length encoded)
 function encodeWorld() {
@@ -891,12 +1083,13 @@ setInterval(() => { if (state === 'playing') saveGame(); }, 30000);
 // ---------------------------------------------------------------- main loop
 function updatePlayer(dt) {
   const k = keys, shift = k.ShiftLeft || k.ShiftRight;
-  const fwd = (k.KeyW || k.ArrowUp ? 1 : 0) - (k.KeyS || k.ArrowDown ? 1 : 0);
-  const str = (k.KeyD || k.ArrowRight ? 1 : 0) - (k.KeyA || k.ArrowLeft ? 1 : 0);
+  let fwd = (k.KeyW || k.ArrowUp ? 1 : 0) - (k.KeyS || k.ArrowDown ? 1 : 0);
+  let str = (k.KeyD || k.ArrowRight ? 1 : 0) - (k.KeyA || k.ArrowLeft ? 1 : 0);
+  if (joy.id !== null) { fwd -= joy.y; str += joy.x; }
   let mx = -Math.sin(player.yaw) * fwd + Math.cos(player.yaw) * str;
   let mz = -Math.cos(player.yaw) * fwd - Math.sin(player.yaw) * str;
   const len = Math.hypot(mx, mz); if (len > 1) { mx /= len; mz /= len; }
-  let speed = player.flying ? 11 : shift ? 7 : 4.5;
+  let speed = player.flying ? 11 : shift || joy.run ? 7 : 4.5;
   if (player.inWater && !player.flying) speed *= 0.6;
   playerKnock -= dt;
   if (playerKnock <= 0) { player.vel.x = mx * speed; player.vel.z = mz * speed; }
@@ -905,6 +1098,7 @@ function updatePlayer(dt) {
   physics(player, dt);
   if (player.pos.y < -20) { player.pos.set(spawn.x, spawn.y, spawn.z); player.vel.set(0, 0, 0); }
   bob += dt * Math.hypot(player.vel.x, player.vel.z) * (player.onGround ? 1.6 : 0);
+  checkTouchHold();
   if (mouseHeld) {
     mouseHeld.t -= dt;
     if (mouseHeld.t <= 0) { mouseHeld.t = 0.22; updateTarget(); mouseHeld.place ? placeBlock() : breakBlock(); }
@@ -933,6 +1127,8 @@ function frame(now) {
   if (nameTimer > 0 && (nameTimer -= dt) <= 0) $('blockname').style.opacity = 0;
   const eyeBlock = getB(Math.floor(camera.position.x), Math.floor(camera.position.y), Math.floor(camera.position.z));
   $('underwater').style.display = eyeBlock === B.WATER ? 'block' : 'none';
+  document.body.classList.toggle('playing', state === 'playing');
+  document.body.classList.toggle('flying', player.flying);
   $('status').textContent = (player.flying ? '✈️ Flying  ' : '') + (muted ? '🔇' : '');
   renderer.render(scene, camera);
 }

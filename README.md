@@ -14,6 +14,7 @@ The whole game is a single file, `index.html` (about 50 KB). It has no build ste
 - Flying, swimming, and day and night with a sun, moon, stars and clouds
 - Simple sound effects made by the game itself (no audio files)
 - The world saves itself in the browser, so you can carry on later
+- Works on phones and tablets too, with on-screen touch controls
 
 ## Run it locally (localhost)
 
@@ -49,6 +50,16 @@ npx serve -l 8080
 
 You can also just double-click `index.html` to open it straight in Chrome. The localhost options above are a bit more reliable for saving your world.
 
+### Play on a phone or tablet
+
+1. Start the game on your Mac (Option 1 or 2 above), with the phone on the same Wi-Fi.
+2. Find your Mac's address: run `ipconfig getifaddr en0` in the Terminal (it looks like `192.168.1.23`).
+3. On the phone, open **http://192.168.1.23:8080** (with your Mac's address) and turn the phone sideways.
+
+**Tip for iPhone and iPad:** in Safari, tap **Share → Add to Home Screen**. BlockCraft then opens full screen like an app, without the browser bars. On Android, the game goes full screen by itself when you tap **Play**.
+
+The phone keeps its own saved world, separate from the one on your computer.
+
 ## Controls
 
 | Key / mouse | What it does |
@@ -69,6 +80,21 @@ You can also just double-click `index.html` to open it straight in Chrome. The l
 **On a Mac trackpad:** click with two fingers to place a block, and scroll with two fingers to change blocks.
 
 **Tips:** place TNT, click it, then run! 🏃 Click a pig to make it jump. Dig deep to find gold and diamonds.
+
+### On a phone or tablet
+
+| Touch | What it does |
+|---|---|
+| Left thumb (joystick) | Walk (push to the edge to run) |
+| Drag on the right side | Look around |
+| Tap a block | Place a block |
+| Hold on a block | Break it (keep holding and slide to dig more) |
+| ⬆ | Jump (or swim up) |
+| ✈️ | Fly on/off (⬆ up, ⬇ down) |
+| Tap a slot at the bottom | Choose a block |
+| 🎒 🌓 🔊 ⏸ | All blocks · Day/night · Sound · Pause |
+
+Tap a pig to make it jump, and tap TNT to light it.
 
 ## Saving
 
