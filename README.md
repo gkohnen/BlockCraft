@@ -87,8 +87,9 @@ The phone keeps its own saved world, separate from the one on your computer.
 |---|---|
 | Left thumb (joystick) | Walk (push to the edge to run) |
 | Drag on the right side | Look around |
-| Tap a block | Place a block |
-| Hold on a block | Break it (keep holding and slide to dig more) |
+| Tap a block | Place a block (🧱 mode) or break it (⛏️ mode) |
+| 🧱 / ⛏️ | Switch between building and digging |
+| Hold on a block | Break it in either mode (keep holding and slide to dig more) |
 | ⬆ | Jump (or swim up) |
 | ✈️ | Fly on/off (⬆ up, ⬇ down) |
 | Tap a slot at the bottom | Choose a block |

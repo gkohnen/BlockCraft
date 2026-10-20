@@ -69,6 +69,8 @@
   #tjump { right: calc(24px + env(safe-area-inset-right)); bottom: 24px; width: 84px; height: 84px; font-size: 36px; }
   #tdown { right: calc(30px + env(safe-area-inset-right)); bottom: 120px; display: none; }
   #tfly { right: calc(36px + env(safe-area-inset-right)); bottom: 120px; width: 60px; height: 60px; font-size: 26px; }
+  #tmode { right: calc(118px + env(safe-area-inset-right)); bottom: 36px; width: 60px; height: 60px; font-size: 26px; }
+  #tmode.dig { background: rgba(255,120,60,.55); }
   body.flying #tdown { display: flex; }
   body.flying #tfly { bottom: 204px; }
   #ttop { position: absolute; top: 10px; right: calc(12px + env(safe-area-inset-right)); display: flex; gap: 8px; }
@@ -115,6 +117,7 @@
   <div class="tbtn" id="tjump" data-key="Space">⬆</div>
   <div class="tbtn" id="tdown" data-key="ShiftLeft">⬇</div>
   <div class="tbtn" id="tfly" data-act="fly">✈️</div>
+  <div class="tbtn" id="tmode" data-act="mode">🧱</div>
   <div id="ttop">
     <div class="tbtn" data-act="blocks">🎒</div>
     <div class="tbtn" data-act="day">🌓</div>
@@ -147,8 +150,9 @@
   <div class="controls mob">
     <div>🕹️ Left thumb</div><div>Walk (push to the edge to run)</div>
     <div>👆 Drag on the right</div><div>Look around</div>
-    <div>👆 Tap a block</div><div>Place a block</div>
-    <div>✋ Hold on a block</div><div>Break it (keep holding to dig!)</div>
+    <div>👆 Tap a block</div><div>Place a block (🧱) or break it (⛏️)</div>
+    <div>🧱 ⛏️</div><div>Switch between building and digging</div>
+    <div>✋ Hold on a block</div><div>Keep digging!</div>
     <div>⬆ ✈️</div><div>Jump / Fly (⬆ ⬇ to go up and down)</div>
     <div>🎒 🌓 🔊 ⏸</div><div>All blocks · Day/night · Sound · Pause</div>
   </div>
@@ -941,9 +945,15 @@ window.addEventListener('resize', () => {
 
 // ---------------------------------------------------------------- touch controls (phones & tablets)
 // Left thumb: joystick. Right side: drag to look, tap a block to place, hold on a block to break.
-const JOY_R = 55, HOLD_MS = 350, MOVE_PX = 12, LOOK_SPEED = 0.006;
+const JOY_R = 55, HOLD_MS = 350, MOVE_PX = 20, LOOK_SPEED = 0.006;
 const joy = { id: null, cx: 0, cy: 0, x: 0, y: 0, run: false };
 let look = null; // the finger on the right side: { id, x, y, sx, sy, t0, moved, digging }
+let digMode = false; // the 🧱/⛏️ button: what a tap does
+ACTIONS.mode = () => {
+  digMode = !digMode; sfx.click();
+  const b = $('tmode'); b.textContent = digMode ? '⛏️' : '🧱'; b.classList.toggle('dig', digMode);
+  const el = $('blockname'); el.textContent = digMode ? '⛏️ Digging' : '🧱 Building'; el.style.opacity = 1; nameTimer = 1.5;
+};
 const joyEl = $('joy'), knobEl = $('knob');
 const buzz = ms => { if (navigator.vibrate) navigator.vibrate(ms); };
 const toAim = (x, y) => ({ x: x / innerWidth * 2 - 1, y: 1 - y / innerHeight * 2 });
@@ -1002,9 +1012,9 @@ function touchEnd(e) {
     else if (look && t.identifier === look.id) {
       if (look.digging) mouseHeld = null;
       else if (!look.moved && e.type === 'touchend' && state === 'playing') {
-        // a quick tap: poke a pig or light TNT, otherwise place a block
+        // a quick tap: dig (⛏️ mode), poke a pig or light TNT, otherwise place a block
         touchAim = toAim(look.sx, look.sy); updateTarget();
-        if (pigUnderCrosshair() || (target && target.id === B.TNT)) breakBlock(); else placeBlock();
+        if (digMode || pigUnderCrosshair() || (target && target.id === B.TNT)) breakBlock(); else placeBlock();
         buzz(10);
       }
       look = null; touchAim = null;
