@@ -58,7 +58,7 @@
   #touchui, #rotate { display: none; }
   body.touch.playing #touchui { display: block; }
   #touchui { position: fixed; inset: 0; pointer-events: none; }
-  #joy { position: absolute; left: calc(28px + env(safe-area-inset-left)); bottom: 28px; width: 120px; height: 120px;
+  #joy { position: absolute; left: 20px; bottom: 20px; width: 120px; height: 120px;
     box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,.15); border: 3px solid rgba(255,255,255,.4); }
   #knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
     background: rgba(255,255,255,.6); }
@@ -66,19 +66,23 @@
     align-items: center; justify-content: center; color: #fff; font-size: 30px; background: rgba(0,0,0,.35);
     border: 3px solid rgba(255,255,255,.45); pointer-events: auto; touch-action: none; }
   .tbtn.down { background: rgba(255,225,77,.5); }
-  #tjump { right: calc(24px + env(safe-area-inset-right)); bottom: 24px; width: 84px; height: 84px; font-size: 36px; }
-  #tdown { right: calc(30px + env(safe-area-inset-right)); bottom: 120px; display: none; }
-  #tfly { right: calc(36px + env(safe-area-inset-right)); bottom: 120px; width: 60px; height: 60px; font-size: 26px; }
-  #tmode { right: calc(118px + env(safe-area-inset-right)); bottom: 36px; width: 60px; height: 60px; font-size: 26px; }
+  /* the bottom corners are clear of the iPhone notch/island, so the joystick and jump sit right in them;
+     the smaller buttons go above the hotbar, in a row over the jump button */
+  #tjump { right: 20px; bottom: 20px; width: 84px; height: 84px; font-size: 36px; }
+  #tmode, #tfly, #tdown { bottom: 118px; width: 60px; height: 60px; font-size: 26px; }
+  #tmode { right: calc(32px + env(safe-area-inset-right)); }
+  #tfly { right: calc(102px + env(safe-area-inset-right)); }
+  #tdown { right: calc(172px + env(safe-area-inset-right)); display: none; }
   #tmode.dig { background: rgba(255,120,60,.55); }
   body.flying #tdown { display: flex; }
-  body.flying #tfly { bottom: 204px; }
   #ttop { position: absolute; top: 10px; right: calc(12px + env(safe-area-inset-right)); display: flex; gap: 8px; }
   #ttop .tbtn { position: static; width: 48px; height: 48px; font-size: 22px; }
-  body.touch { --slot: clamp(30px, calc((100vw - 360px) / 9 - 10px), 54px); }
+  /* hotbar fits between the joystick (left 152px) and the jump button (right 116px) */
+  body.touch { --slot: clamp(26px, calc((100vw - 368px) / 9), 54px); }
   body.touch .slot { width: var(--slot); height: var(--slot); }
   body.touch .slot img { width: calc(var(--slot) * .78); height: calc(var(--slot) * .78); }
-  body.touch #hotbar { bottom: calc(8px + env(safe-area-inset-bottom)); }
+  body.touch #hotbar { bottom: calc(8px + env(safe-area-inset-bottom)); left: 152px; right: 116px; transform: none;
+    width: fit-content; margin: 0 auto; }
   body.touch:not(.playing) #hotbar { display: none; }
   #rotate { position: fixed; inset: 0; z-index: 10; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 20px; color: #fff; font-size: 24px; background: rgba(10,15,35,.94); }
